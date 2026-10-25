@@ -1,0 +1,11 @@
+# Versions used for the paper results (Python 3.10)
+numpy==2.2.6
+scipy==1.15.3
+matplotlib==3.10.8
+pandas==2.3.3
+PyYAML==6.0.2
+Pillow==10.4.0
+# AirSim client (only needed for the AirSim part). Its setup imports numpy and msgpackrpc, so install it last:
+#   pip install numpy==2.2.6 msgpack-rpc-python==0.4.1 && pip install --no-build-isolation airsim==1.8.1
+msgpack-rpc-python==0.4.1
+airsim==1.8.1

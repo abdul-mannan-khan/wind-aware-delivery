@@ -1,0 +1,53 @@
+# Every setting that a config file can change, with its DEFAULT value.
+# Copy this file, give it a new name, delete what you do not change, and edit the rest.
+name: my_experiment              # results go to results/experiments/<name>/
+description: What I want to find out.
+
+grid:                            # factors that are swept (every combination is flown)
+  U_ref: [4, 8, 12, 16]          # reference wind speed at 60 m height (m/s)
+  theta: [0, 45, 90, 135, 180, 225, 270, 315]   # direction the wind blows TOWARD (deg); 0 = east, 90 = north
+  customer: [0, 1, 2, 3]         # index into planner.CUSTOMERS
+  planner: [shortest, energy0, wind]            # shortest path / energy in still air / wind-aware energy
+  controller: [pid, dob]         # PID only / PID + disturbance observer
+  seed: [0, 1]                   # random gust realisations
+
+vehicle:                         # sim/quadrotor.py, class Params
+  m_frame: 1.6                   # kg, airframe + battery
+  m_payload: 0.6                 # kg, parcel (dropped at the customer)
+  T_max: 12.0                    # N, maximum thrust per rotor
+  CdA: 0.05                      # m^2, body + parcel drag area
+  d_rotor: [0.30, 0.30, 0.05]    # kg/s, rotor drag coefficients (body x, y, z)
+  r_prop: 0.127                  # m, propeller radius
+  eta: 0.70                      # motor + ESC efficiency
+  P_avionics: 15.0               # W
+  battery_Wh: 59.2               # usable battery energy (Wh)
+
+planner:                         # sim/mission.py
+  ALTITUDES: [20, 35, 50]        # cruise heights the energy planners may choose (m)
+  SPEEDS: [6, 8, 10, 12]         # cruise ground speeds the energy planners may choose (m/s)
+  Z_NOMINAL: 35.0                # cruise height of the shortest-path planner (m)
+  V_NOMINAL: 8.0                 # cruise speed of the shortest-path planner (m/s)
+  TILT_LIMIT: 35.0               # max steady tilt accepted by the wind-aware planner (deg)
+  Z_DROP: 6.0                    # height at which the parcel is released (m)
+  V_CLIMB: 2.5                   # m/s
+  V_DESCEND: 2.0                 # m/s
+  K_OBS: 4.0                     # disturbance-observer gain (PID+DOB controller)
+  DEPOT: [18, 18]                # depot position (m); must be in a street
+  CUSTOMERS: [[618, 442], [274, 618], [618, 106], [362, 362]]   # customer positions (m); must be in streets
+
+wind:                            # sim/wind.py, class WindField
+  z_ref: 60.0                    # height at which U_ref is defined (m)
+  alpha: 0.30                    # power-law exponent above the roofs (0.30 = city centre)
+  a_canopy: 1.5                  # how fast the wind decays below roof height
+  k_corridor: 0.3                # extra speed-up along wide avenues (wind corridors)
+  k_shelter: 0.5                 # strength of the wind sheltering behind taller upwind buildings (0 = none)
+  k_cross: 0.25                  # fraction of the cross-street wind that survives in a street canyon
+
+gust:                            # sim/wind.py, class DrydenGust
+  L: [30.0, 30.0, 12.0]          # gust length scales x, y, z (m)
+  floor: 0.2                     # minimum gust standard deviation (m/s)
+
+city:                            # sim/city.py, class City (keep n_blocks/block/street/avenue unless you also move
+  seed: 1                        # the depot and customers - they must stay in streets)
+  h_min: 10.0                    # building-height parameters (m); the actual tallest building is ~70 m
+  h_max: 85.0

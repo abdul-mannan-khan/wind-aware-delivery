@@ -1,0 +1,14 @@
+# Same grid as baseline_small with gustier air: shorter gust length scales and a larger minimum gust level.
+# Run several seeds, because gusts are random.
+name: strong_gusts
+description: Gustier air (shorter length scales, higher floor), three seeds.
+grid:
+  U_ref: [4, 8, 12, 16]
+  theta: [0, 90, 180, 270]
+  customer: [0]
+  planner: [shortest, energy0, wind]
+  controller: [pid, dob]
+  seed: [0, 1, 2]
+gust:
+  L: [15.0, 15.0, 6.0]   # m, gust length scales x, y, z (default 30, 30, 12)
+  floor: 0.6             # m/s, minimum gust standard deviation (default 0.2)

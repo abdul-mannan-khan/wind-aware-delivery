@@ -1,0 +1,10 @@
+# Full factorial campaign in the procedural city: 4 x 8 x 4 x 3 x 2 x 2 = 1,536 missions (~1 h on 32 cores).
+name: procedural_full
+description: Full factorial campaign in the procedural city (version 1 planners).
+grid:
+  U_ref: [4, 8, 12, 16]
+  theta: [0, 45, 90, 135, 180, 225, 270, 315]
+  customer: [0, 1, 2, 3]
+  planner: [shortest, energy0, wind]
+  controller: [pid, dob]
+  seed: [0, 1]

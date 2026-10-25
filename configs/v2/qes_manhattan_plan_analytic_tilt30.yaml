@@ -1,0 +1,36 @@
+name: qes_manhattan_plan_analytic_tilt30
+description: 'Missions flown in the QES-Winds field, ours planning on the analytical
+  map with a stricter tilt limit (30 deg): does a larger margin absorb wind-map error?'
+city:
+  osm: ../data/cities/manhattan.npz
+planner:
+  CLEAR_H: 4.0
+  TILT_LIMIT: 30.0
+qes:
+  dir: ../results/qes/manhattan
+  fly: qes
+  plan: analytic
+grid:
+  U_ref:
+  - 12.0
+  - 16.0
+  theta:
+  - 0
+  - 45
+  - 90
+  - 135
+  - 180
+  - 225
+  - 270
+  - 315
+  customer:
+  - 0
+  - 1
+  - 2
+  - 3
+  controller:
+  - dob
+  seed:
+  - 0
+  planner:
+  - wind

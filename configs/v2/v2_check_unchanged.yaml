@@ -1,0 +1,21 @@
+name: v2_check_unchanged
+description: Shortest, cut-off and Rienecker-type planners after the v2 code change;
+  must equal the v1 rows.
+grid:
+  U_ref:
+  - 12.0
+  - 16.0
+  theta:
+  - 0
+  - 180
+  customer:
+  - 0
+  - 1
+  planner:
+  - shortest
+  - rienecker
+  - cutoff
+  controller:
+  - dob
+  seed:
+  - 0

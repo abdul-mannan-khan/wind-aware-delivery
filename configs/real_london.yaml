@@ -1,0 +1,17 @@
+name: real_london
+description: >
+  Real city geometry from OpenStreetMap (london, 640 m x 640 m), all planners including the three literature
+  baselines (cutoff, egate, rienecker), both controllers. Depot and customers are picked by osm_city.py
+  (open street cells nearest to the procedural positions). Real streets are narrower than the procedural
+  ones, so the route planner keeps 4 m (not 6 m) from walls.
+city:
+  osm: ../data/cities/london.npz
+planner:
+  CLEAR_H: 4.0
+grid:
+  U_ref: [4.0, 8.0, 12.0, 16.0]
+  theta: [0, 45, 90, 135, 180, 225, 270, 315]
+  customer: [0, 1, 2, 3]
+  planner: [shortest, energy0, wind, cutoff, egate, rienecker]
+  controller: [pid, dob]
+  seed: [0, 1]

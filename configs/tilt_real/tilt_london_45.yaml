@@ -1,0 +1,14 @@
+name: tilt_london_45
+description: Tilt-limit sweep of the wind-aware planner in the real city (london), TILT_LIMIT = 45 deg (default 35).
+city:
+  osm: ../data/cities/london.npz
+planner:
+  CLEAR_H: 4.0
+  TILT_LIMIT: 45
+grid:
+  U_ref: [12.0, 16.0]
+  theta: [0, 45, 90, 135, 180, 225, 270, 315]
+  customer: [0, 1, 2, 3]
+  planner: [wind]
+  controller: [dob]
+  seed: [0, 1]

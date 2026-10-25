@@ -1,0 +1,35 @@
+name: v2_tilt_manhattan_40
+description: 'v2: energy planners choose the ground speed per straight segment (4-18
+  m/s) from the wind map (planner.py speeds); shortest/cutoff/egate/rienecker are
+  unchanged and taken from the v1 runs. Tilt-limit sweep of the wind-aware planner
+  in the real city (manhattan), TILT_LIMIT = 40 deg (default 35).'
+city:
+  osm: ../data/cities/manhattan.npz
+planner:
+  CLEAR_H: 4.0
+  TILT_LIMIT: 40
+grid:
+  U_ref:
+  - 12.0
+  - 16.0
+  theta:
+  - 0
+  - 45
+  - 90
+  - 135
+  - 180
+  - 225
+  - 270
+  - 315
+  customer:
+  - 0
+  - 1
+  - 2
+  - 3
+  planner:
+  - wind
+  controller:
+  - dob
+  seed:
+  - 0
+  - 1

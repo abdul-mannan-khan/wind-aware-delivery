@@ -1,0 +1,6 @@
+# HIL campaign v2: wind-aware planner with per-segment speeds (shortest path unchanged, kept from v1)
+U_ref: [12.0, 16.0]
+theta: [0, 90, 180, 270]
+customer: [0, 2]
+planner: [wind]
+seed: [0]

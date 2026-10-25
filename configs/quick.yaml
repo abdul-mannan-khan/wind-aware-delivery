@@ -1,0 +1,10 @@
+# 12 missions (~3-5 min on 8 cores): checks that everything works.
+name: quick
+description: Smoke test - one wind speed, two directions, one customer, all planners and controllers.
+grid:
+  U_ref: [12]
+  theta: [0, 180]
+  customer: [0]
+  planner: [shortest, energy0, wind]
+  controller: [pid, dob]
+  seed: [0]

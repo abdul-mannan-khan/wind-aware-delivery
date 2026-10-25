@@ -1,0 +1,33 @@
+name: v2_sens_k_corridor_0.21
+description: "v2: energy planners choose the ground speed per straight segment (4-18\
+  \ m/s) from the wind map (planner.py speeds); shortest/cutoff/egate/rienecker are\
+  \ unchanged and taken from the v1 runs. Sensitivity: Sensitivity of the main result\
+  \ to the wind model, k_corridor = 0.21 (default \xB1 30 %); procedural city, PID+DOB."
+wind:
+  k_corridor: 0.21
+grid:
+  U_ref:
+  - 8.0
+  - 12.0
+  - 16.0
+  theta:
+  - 0
+  - 45
+  - 90
+  - 135
+  - 180
+  - 225
+  - 270
+  - 315
+  customer:
+  - 0
+  - 1
+  - 2
+  - 3
+  planner:
+  - energy0
+  - wind
+  controller:
+  - dob
+  seed:
+  - 0

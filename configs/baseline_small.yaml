@@ -1,0 +1,11 @@
+# Small reference campaign: 4 x 4 x 1 x 3 x 1 x 1 = 48 missions (~8-10 min on 16 cores).
+# Compare every modified experiment against this one (same grid, default model).
+name: baseline_small
+description: Default model on a small grid (customer 0, PID+DOB, four directions).
+grid:
+  U_ref: [4, 8, 12, 16]
+  theta: [0, 90, 180, 270]
+  customer: [0]
+  planner: [shortest, energy0, wind]
+  controller: [dob]
+  seed: [0]

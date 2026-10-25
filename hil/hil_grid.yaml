@@ -1,0 +1,6 @@
+# HIL campaign: 2 wind speeds x 4 directions x 2 customers x 2 planners = 32 missions
+U_ref: [12.0, 16.0]
+theta: [0, 90, 180, 270]
+customer: [0, 2]
+planner: [shortest, wind]
+seed: [0]

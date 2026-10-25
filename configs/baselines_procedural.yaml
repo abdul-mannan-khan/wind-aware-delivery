@@ -1,0 +1,13 @@
+name: baselines_procedural
+description: >
+  The three literature baselines on the procedural city, same grid as procedural_full.yaml
+  (the other planners are already in results/campaign.csv).
+  cutoff = manufacturer wind limit, egate = energy-only feasibility gate (Betti Sorbelli et al. 2021),
+  rienecker = minimum-energy route in the wind at fixed altitude and airspeed (Rienecker et al. 2023).
+grid:
+  U_ref: [4.0, 8.0, 12.0, 16.0]
+  theta: [0, 45, 90, 135, 180, 225, 270, 315]
+  customer: [0, 1, 2, 3]
+  planner: [cutoff, egate, rienecker]
+  controller: [pid, dob]
+  seed: [0, 1]

@@ -1,0 +1,36 @@
+name: qes_london_plan_qes
+description: Missions flown in the QES-Winds mean field; the wind-aware planner plans
+  on the QES map (perfect-map reference).
+city:
+  osm: ../data/cities/london.npz
+planner:
+  CLEAR_H: 4.0
+qes:
+  dir: ../results/qes/london
+  fly: qes
+  plan: qes
+grid:
+  U_ref:
+  - 8.0
+  - 12.0
+  - 16.0
+  theta:
+  - 0
+  - 45
+  - 90
+  - 135
+  - 180
+  - 225
+  - 270
+  - 315
+  customer:
+  - 0
+  - 1
+  - 2
+  - 3
+  controller:
+  - dob
+  seed:
+  - 0
+  planner:
+  - wind

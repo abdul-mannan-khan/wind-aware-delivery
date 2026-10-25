@@ -1,0 +1,12 @@
+# Same grid as baseline_small, but the parcel weighs 1.0 kg instead of 0.6 kg.
+name: heavy_parcel
+description: Heavier parcel (1.0 kg).
+grid:
+  U_ref: [4, 8, 12, 16]
+  theta: [0, 90, 180, 270]
+  customer: [0]
+  planner: [shortest, energy0, wind]
+  controller: [dob]
+  seed: [0]
+vehicle:
+  m_payload: 1.0

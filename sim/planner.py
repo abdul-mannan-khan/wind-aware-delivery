@@ -26,7 +26,10 @@ class Planner:
         r = int(np.ceil(clear_h / res))
         yy, xx = np.mgrid[-r:r + 1, -r:r + 1]
         self.occ = binary_dilation(occ, structure=(xx ** 2 + yy ** 2) <= r * r)
-        self.occ_tight = binary_dilation(occ, structure=(xx ** 2 + yy ** 2) <= (r // 2) ** 2)
+        # straight shortcuts and corner rounding are checked against occ_tight: keep at least one cell of margin
+        # (with clear_h < 2 res the half-radius rounded down to zero cells, so routes could graze walls)
+        rt = max(r // 2, 1)
+        self.occ_tight = binary_dilation(occ, structure=(xx ** 2 + yy ** 2) <= rt * rt)
         self.lam = lam_turb
         self.tilt_limit = tilt_limit
         self._cost_tables()

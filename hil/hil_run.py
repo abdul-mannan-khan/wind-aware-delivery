@@ -14,6 +14,11 @@ rules as sim/mission.py, so HIL and pure simulation are directly comparable.
   python3 hil_run.py --U 12 --theta 0 --customer 0 --planner wind          # one mission
   python3 hil_run.py --grid hil_grid.yaml                                    # many missions
   python3 hil_run.py --planner test --U 0                                    # short test pattern, no wind
+  python3 hil_run.py --grid hil_grid_v2_cities.yaml --config ../configs/v2/v2_london.yaml   # a real city
+  python3 hil_run.py --grid hil_grid_v2_cities.yaml --config ../configs/v2/v2_london.yaml --dry-run
+--config takes the experiment files of sim/run_experiments.py: their city (procedural or OpenStreetMap), planner,
+wind and gust settings are used, so HIL and the simulation campaign fly the same missions. --dry-run plans every
+mission of the grid without a flight controller (planner outcome and planning time only).
 Only one process may open the serial port.
 """
 import argparse, concurrent.futures as cf, csv, json, os, sys, time
@@ -27,6 +32,7 @@ import mission                                                    # noqa: E402
 from city import City                                             # noqa: E402
 from quadrotor import G, Params, Quadrotor, rotor_power           # noqa: E402
 from wind import DrydenGust, WindField                            # noqa: E402
+import run_experiments as rx                                      # noqa: E402
 
 # ENU world / FLU body (simulator)  <->  NED world / FRD body (PX4)
 C = np.array([[0.0, 1, 0], [1, 0, 0], [0, 0, -1]])
@@ -37,15 +43,39 @@ MAG_B, MAG_I, MAG_D = 0.489, np.radians(66.3), np.radians(1.0)    # WMM near the
 M_NED = MAG_B * np.array([np.cos(MAG_I) * np.cos(MAG_D), np.cos(MAG_I) * np.sin(MAG_D), np.sin(MAG_I)])
 M_ENU = C @ M_NED
 YAW_NED = np.pi / 2                                               # simulator yaw 0 (nose east) = heading 90 deg
-RECOVERY_Z = 80.0                                                 # above every building (max 70.5 m)
+RECOVERY_MIN_Z = 80.0                                             # above every building of the procedural city
+CONFIG = None                                                     # experiment file (--config); None = procedural city
+_ENV = {}                                                         # per-process cache: config, city
+
+
+def load_env(config):
+    """City and planner/wind/gust settings of an experiment file, installed in this process (cached)."""
+    if _ENV.get('config') != config or 'city' not in _ENV:
+        cfg = rx.load_config(config) if config else {}
+        osm = (cfg.get('city') or {}).get('osm')
+        if osm and not os.path.isabs(osm):                        # paths in the configs are relative to sim/
+            cfg['city']['osm'] = os.path.normpath(os.path.join(HERE, '..', 'sim', osm))
+        rx.apply_config(cfg)
+        _ENV.update(config=config, cfg=cfg, city=rx.make_city(cfg.get('city')))
+    return _ENV['cfg'], _ENV['city']
+
+
+def recovery_z(city, a, b, margin=10.0):
+    """Altitude that clears every roof on the straight line a -> b (horizontal), at least RECOVERY_MIN_Z."""
+    if 'hmap' not in _ENV or _ENV.get('hmap_city') is not city:
+        _ENV['hmap'], _ENV['hmap_city'] = city.height_map(2.0), city
+    xs, H = _ENV['hmap']
+    pts = np.linspace(np.asarray(a)[:2], np.asarray(b)[:2], 400)
+    idx = np.clip(np.round(pts / (xs[1] - xs[0]) - 0.5).astype(int), 0, len(xs) - 1)
+    return max(RECOVERY_MIN_Z, float(H[idx[:, 0], idx[:, 1]].max()) + margin)
 DT_PHYS = 0.004
 
 
-def plan_job(U, theta, customer, planner):
+def plan_job(U, theta, customer, planner, config=None):
     """Runs in a child process so the 250 Hz loop is never blocked."""
-    city = City()
+    cfg, city = load_env(config)
     t0 = time.time()
-    wind = WindField(city, U, theta)
+    wind = WindField(city, U, theta, **(cfg.get('wind') or {}))
     t_wind = time.time() - t0
     t0 = time.time()
     if planner == 'test':                                         # short pattern to check the HIL loop
@@ -239,7 +269,7 @@ def run(args, missions, out_dir):
         if state == 'plan':
             if job is None:
                 U, th, cu, pl, seed = missions[mi]
-                job = pool.submit(plan_job, U, th, cu, pl)
+                job = pool.submit(plan_job, U, th, cu, pl, CONFIG)
                 st = dict(U=U, theta=th, customer=cu, planner=pl, seed=seed)
             elif job.done():
                 r = job.result()
@@ -308,10 +338,12 @@ def run(args, missions, out_dir):
             continue
         if state == 'recover':                                    # wind off, climb above the roofs, fly home
             sim.wind_on = False
-            home_hi = np.array([*mission.DEPOT, RECOVERY_Z])
             if 'rec_phase' not in st:
                 st['rec_phase'] = 0
                 st['rec_from'] = q.p.copy()
+                st['rec_z'] = recovery_z(sim.city, q.p, mission.DEPOT)
+            RECOVERY_Z = st['rec_z']
+            home_hi = np.array([*mission.DEPOT, RECOVERY_Z])
             if not link.armed:
                 enter('land')
                 continue
@@ -383,6 +415,27 @@ def run(args, missions, out_dir):
     print('HIL done', flush=True)
 
 
+def dry_run(a, missions):
+    """Plan every mission (no flight controller): outcome of the planner, planning time, predicted energy."""
+    os.makedirs(a.out, exist_ok=True)
+    rows = []
+    for U, th, cu, pl, seed in missions:
+        r = plan_job(U, th, cu, pl, CONFIG)
+        ok = r['ref'] is not None
+        pred = r['pred'] or {}
+        rows.append(dict(U=U, theta=th, customer=cu, planner=pl, seed=seed, planned=ok,
+                         T_ref_s=round(r['ref'].T_end, 1) if ok else '', t_plan_s=round(r['t_plan'], 2),
+                         E_pred_Wh=round(pred.get('E_pred_out', 0) + pred.get('E_pred_back', 0), 2) if ok else ''))
+        print(f"U={U:4.0f} th={th:3.0f} c={cu} {pl:8s} {'planned' if ok else 'REFUSED':8s} "
+              f"T_ref={rows[-1]['T_ref_s']} s  plan {r['t_plan']:.1f} s", flush=True)
+    f = os.path.join(a.out, 'dry_run.csv')
+    with open(f, 'w', newline='') as fh:
+        w = csv.DictWriter(fh, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+    print(f'dry run: {len(rows)} missions, {sum(r["planned"] for r in rows)} planned -> {f}')
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--dev', default='/dev/ttyACM0')
@@ -395,13 +448,21 @@ def main():
     ap.add_argument('--warmup', type=float, default=40.0, help='s of sensor data before the first mission (EKF)')
     ap.add_argument('--out', default=os.path.join(HERE, 'results'))
     ap.add_argument('--verbose', action='store_true', help='print the vehicle state every 2 s')
+    ap.add_argument('--config', help='experiment file of sim/run_experiments.py (city, planner, wind, gust settings)')
+    ap.add_argument('--dry-run', action='store_true', help='plan every mission without a flight controller')
     a = ap.parse_args()
+    global CONFIG
+    CONFIG = os.path.abspath(a.config) if a.config else None
+    load_env(CONFIG)                                              # sets the depot and customers of the city here too
     if a.grid:
         import itertools, yaml
         g = yaml.safe_load(open(a.grid))
         missions = list(itertools.product(g['U_ref'], g['theta'], g['customer'], g['planner'], g.get('seed', [0])))
     else:
         missions = [(a.U, a.theta, a.customer, a.planner, a.seed)]
+    if a.dry_run:
+        dry_run(a, missions)
+        return
     import signal
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(1))
     try:

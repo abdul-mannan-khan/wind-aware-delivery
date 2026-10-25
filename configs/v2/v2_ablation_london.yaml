@@ -1,0 +1,16 @@
+name: v2_ablation_london
+description: 'Ablation (london): the wind-aware planner with one ground speed per leg (SPEED_SCHEDULE off, speeds 6-12
+  m/s), the version 1 planner, flown with the corrected clearance (commit bf9baaa). Compare with planner wind of
+  v2_london.'
+city:
+  osm: ../data/cities/london.npz
+planner:
+  CLEAR_H: 4.0
+  SPEED_SCHEDULE: false
+grid:
+  U_ref: [4.0, 8.0, 12.0, 16.0]
+  theta: [0, 45, 90, 135, 180, 225, 270, 315]
+  customer: [0, 1, 2, 3]
+  planner: [wind]
+  controller: [pid, dob]
+  seed: [0, 1]

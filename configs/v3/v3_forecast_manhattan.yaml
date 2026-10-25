@@ -1,0 +1,43 @@
+name: v3_forecast_manhattan
+description: 'Forecast error (manhattan): the planner sees U_ref + dU_plan from theta
+  + dth_plan; the vehicle flies in the true wind.'
+city:
+  osm: ../data/cities/manhattan.npz
+planner:
+  CLEAR_H: 4.0
+grid:
+  U_ref:
+  - 8.0
+  - 12.0
+  - 16.0
+  theta:
+  - 0
+  - 45
+  - 90
+  - 135
+  - 180
+  - 225
+  - 270
+  - 315
+  customer:
+  - 0
+  - 1
+  - 2
+  - 3
+  planner:
+  - cutoff
+  - wind
+  controller:
+  - dob
+  seed:
+  - 0
+  dU_plan:
+  - -4.0
+  - -2.0
+  - 0.0
+  - 2.0
+  - 4.0
+  dth_plan:
+  - -30.0
+  - 0.0
+  - 30.0

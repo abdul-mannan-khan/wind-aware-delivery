@@ -105,7 +105,8 @@ def make_params():
 
 
 def job(args):
-    U, th, cust, planner, ctrl, seed = args
+    U, th, cust, planner, ctrl, seed = args[:6]
+    dU, dth = (args[6], args[7]) if len(args) > 6 else (0.0, 0.0)   # forecast error: plan in (U + dU, theta + dth)
     if "city" not in _CACHE:
         _CACHE["city"] = make_city(_CFG.get("city"))
         _CACHE["P"] = make_params()
@@ -124,11 +125,22 @@ def job(args):
     if q:
         fly = _CACHE[("qes",) + key] if q.get("fly", "qes") == "qes" else _CACHE[key]
         plan = _CACHE[("qes",) + key] if q.get("plan", "analytic") == "qes" else _CACHE[key]
+    if dU or dth:   # the planner sees a forecast that differs from the wind the vehicle meets
+        if q:
+            raise ValueError("forecast offsets (dU_plan, dth_plan) cannot be combined with a qes section")
+        pkey = ("plan", max(U + dU, 0.5), (th + dth) % 360.0)
+        if pkey not in _CACHE:
+            for k in [k for k in _CACHE if isinstance(k, tuple) and k[0] == "plan"]:
+                del _CACHE[k]
+            _CACHE[pkey] = WindField(city, pkey[1], pkey[2], **(_CFG.get("wind") or {}))
+        plan = _CACHE[pkey]
     try:
         r = run_mission(U, th, cust, planner, ctrl, seed, city=city, wind=fly, P=_CACHE["P"], plan_wind=plan)
     except Exception as e:  # keep the campaign going; record the failure
         r = dict(U_ref=U, theta=th, customer=cust, planner=planner, controller=ctrl, seed=seed,
                  success=False, error=repr(e))
+    if len(args) > 6:
+        r.update(dU_plan=dU, dth_plan=dth)
     return r
 
 
@@ -154,16 +166,19 @@ def main():
     cfg = load_config(a.config) if a.config else {"name": "quick" if a.quick else "procedural_full"}
     grid = dict(QUICK_GRID if a.quick else DEFAULT_GRID)
     for k, v in (cfg.get("grid") or {}).items():
-        if k not in grid:
-            raise KeyError(f"unknown grid factor '{k}'; allowed: {', '.join(grid)}")
+        if k not in grid and k not in ("dU_plan", "dth_plan"):
+            raise KeyError(f"unknown grid factor '{k}'; allowed: {', '.join(grid)}, dU_plan, dth_plan")
         grid[k] = v if isinstance(v, list) else [v]
     apply_config(cfg)
     n_cust = len(mission.CUSTOMERS)
     if any(c >= n_cust for c in grid["customer"]):
         raise ValueError(f"customer index out of range: there are {n_cust} customers (0..{n_cust - 1})")
 
-    jobs = list(itertools.product([float(u) for u in grid["U_ref"]], [float(t) for t in grid["theta"]],
-                                  grid["customer"], grid["planner"], grid["controller"], grid["seed"]))
+    factors = [[float(u) for u in grid["U_ref"]], [float(t) for t in grid["theta"]],
+               grid["customer"], grid["planner"], grid["controller"], grid["seed"]]
+    if "dU_plan" in grid or "dth_plan" in grid:   # optional forecast-error factors (m/s, deg)
+        factors += [[float(v) for v in grid.get("dU_plan", [0.0])], [float(v) for v in grid.get("dth_plan", [0.0])]]
+    jobs = list(itertools.product(*factors))
     out = a.out or os.path.join("..", "results", "experiments", cfg["name"], "campaign.csv")
     print(f"experiment '{cfg['name']}': {len(jobs)} missions on {a.workers} workers -> {out}", flush=True)
     if a.dry_run:
